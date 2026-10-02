@@ -5,11 +5,12 @@ in order to get the data in a suitable format
 for modeling
 """
 
+import numpy as np
 import pandas as pd
 
 def merge_rebounds_and_shots(
     rebound_df: pd.DataFrame,
-    shot_df: pd.DataFrame,
+    shot_df: pd.DataFrame
 ):
     """ This function merges rebounds and shots together.
     The overall purpose is to get the shot frameIdx for
@@ -29,7 +30,7 @@ def merge_rebounds_and_shots(
     """
 
     rebound_df = rebound_df.merge(
-        shot_df[["gameId", "id", "startFrame", "location"]],
+        shot_df[["gameId", "id", "startFrame", "location", "distance"]],
         left_on=["gameId", "shotId"],
         right_on=["gameId", "id"],
         how="left",
@@ -37,10 +38,30 @@ def merge_rebounds_and_shots(
     )
 
     # Unpack coordinates
-    rebound_df["rebound_x"] = [x[0] for x in rebound_df["location"]]
-    rebound_df["rebound_y"] = [x[1] for x in rebound_df["location"]]
+    rebound_x = []
+    rebound_y = []
+    shot_x = []
+    shot_y = []
+    for _, row in rebound_df.iterrows():
+        if row["location"] and type(row["location"]) != float:
+            rebound_x.append(row["location"][0])
+            rebound_y.append(row["location"][1])
+        else:
+            rebound_x.append(np.nan)
+            rebound_y.append(np.nan)
 
-    rebound_df["shot_x"] = [x[0] for x in rebound_df["location_shot"]]
-    rebound_df["shot_y"] = [x[1] for x in rebound_df["location_shot"]]
+        if row["location_shot"] and type(row["location_shot"]) != float:
+            shot_x.append(row["location_shot"][0])
+            shot_y.append(row["location_shot"][1])
+        else:
+            shot_x.append(np.nan)
+            shot_y.append(np.nan)
+
+    # Store in original DataFrame
+    rebound_df["rebound_x"] = rebound_x
+    rebound_df["rebound_y"] = rebound_y
+
+    rebound_df["shot_x"] = shot_x
+    rebound_df["shot_y"] = shot_y
 
     return rebound_df
